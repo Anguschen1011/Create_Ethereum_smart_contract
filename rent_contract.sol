@@ -2,26 +2,26 @@
 pragma solidity ^0.8.0;
 
 contract RentAgreement {
-    // 合約中的關鍵參數
-    address public landlord; // 房東地址
-    address public tenant; // 租客地址
-    uint256 public rentAmount; // 每月房租金額（Wei）
-    uint256 public depositAmount; // 保證金金額（Wei）
-    uint256 public utilityAmount; // 每月水電費金額（Wei）
-    uint256 public rentDueDate; // 房租到期日
-    uint256 public leaseEndDate; // 租約結束日期（時間戳）
-    bool public depositPaid; // 保證金是否已支付
-    bool public contractTerminated; // 添加合約是否已終止的變量
+    // Key parameters in the contract
+    address public landlord; // Landlord's address
+    address public tenant; // Tenant's address
+    uint256 public rentAmount; // Monthly rent amount (in Wei)
+    uint256 public depositAmount; // Deposit amount (in Wei)
+    uint256 public utilityAmount; // Monthly utility fee amount (in Wei)
+    uint256 public rentDueDate; // Rent due date
+    uint256 public leaseEndDate; // Lease end date (timestamp)
+    bool public depositPaid; // Whether the deposit has been paid
+    bool public contractTerminated; // Variable indicating if the contract has been terminated
 
-    // 事件，用於記錄合約中的重要活動
-    event RentPaid(address indexed tenant, uint256 amount); // 房租支付事件
-    event UtilityPaid(address indexed tenant, uint256 amount); // 水電費支付事件
-    event DepositPaid(address indexed tenant, uint256 amount); // 保證金支付事件
-    event MaintenanceRequested(address indexed tenant, string request); // 維修請求事件
-    event LeaseTerminated(address indexed tenant); // 租約終止事件
-    event Withdrawal(address indexed landlord, uint256 amount); // 提款事件
+    // Events to record important activities in the contract
+    event RentPaid(address indexed tenant, uint256 amount); // Rent payment event
+    event UtilityPaid(address indexed tenant, uint256 amount); // Utility payment event
+    event DepositPaid(address indexed tenant, uint256 amount); // Deposit payment event
+    event MaintenanceRequested(address indexed tenant, string request); // Maintenance request event
+    event LeaseTerminated(address indexed tenant); // Lease termination event
+    event Withdrawal(address indexed landlord, uint256 amount); // Withdrawal event
 
-    // 修飾符，用於限制某些函數的訪問權限
+    // Modifiers to restrict access to certain functions
     modifier onlyLandlord() {
         require(msg.sender == landlord, "Only the landlord can call this function");
         _;
@@ -32,7 +32,7 @@ contract RentAgreement {
         _;
     }
 
-    // 構造函數，初始化合約參數
+    // Constructor to initialize contract parameters
     constructor(
         address _tenant,
         uint256 _rentAmountInETH,
@@ -41,56 +41,56 @@ contract RentAgreement {
         uint256 _leaseDurationMonths,
         uint256 _leaseDurationDays
     ) {
-        landlord = msg.sender; // 設置房東為合約部署者
-        tenant = _tenant; // 設置租客錢包地址
-        rentAmount = _rentAmountInETH * 1 ether; // 設置每月房租金額（ETH轉換為Wei）
-        depositAmount = _depositAmountInETH * 1 ether; // 設置保證金金額（ETH轉換為Wei）
+        landlord = msg.sender; // Set the landlord as the contract deployer
+        tenant = _tenant; // Set the tenant's wallet address
+        rentAmount = _rentAmountInETH * 1 ether; // Set the monthly rent amount (convert ETH to Wei)
+        depositAmount = _depositAmountInETH * 1 ether; // Set the deposit amount (convert ETH to Wei)
 
-        // 計算租賃期限
+        // Calculate the lease duration
         uint256 leaseDurationInSeconds = (
             (_leaseDurationYears * 365 * 24 * 60 * 60) +
             (_leaseDurationMonths * 30 * 24 * 60 * 60) +
             (_leaseDurationDays * 24 * 60 * 60)
         );
 
-        rentDueDate = block.timestamp + 30 days; // 設置第一個房租到期日
-        leaseEndDate = block.timestamp + leaseDurationInSeconds; // 設置租約結束日期
+        rentDueDate = block.timestamp + 30 days; // Set the first rent due date
+        leaseEndDate = block.timestamp + leaseDurationInSeconds; // Set the lease end date
     }
 
-    // 租客支付房租
+    // Tenant pays the rent
     function payRent() public payable onlyTenant {
-        require(msg.value == rentAmount, "Incorrect rent amount"); // 檢查支付金額是否正確
-        require(block.timestamp <= rentDueDate, "Rent is overdue"); // 檢查房租是否逾期
-        rentDueDate += 30 days; // 更新下一個房租到期日
-        emit RentPaid(msg.sender, msg.value); // 觸發房租支付事件
+        require(msg.value == rentAmount, "Incorrect rent amount"); // Check if the payment amount is correct
+        require(block.timestamp <= rentDueDate, "Rent is overdue"); // Check if the rent is overdue
+        rentDueDate += 30 days; // Update the next rent due date
+        emit RentPaid(msg.sender, msg.value); // Trigger rent payment event
     }
 
-    // 租客支付水電費
+    // Tenant pays the utility fee
     function payUtility() public payable onlyTenant {
-        require(msg.value == utilityAmount, "Incorrect utility amount"); // 檢查支付金額是否正確
-        require(block.timestamp <= rentDueDate, "Utility payment is overdue"); // 檢查水電費是否逾期
-        emit UtilityPaid(msg.sender, msg.value); // 觸發水電費支付事件
+        require(msg.value == utilityAmount, "Incorrect utility amount"); // Check if the payment amount is correct
+        require(block.timestamp <= rentDueDate, "Utility payment is overdue"); // Check if the utility payment is overdue
+        emit UtilityPaid(msg.sender, msg.value); // Trigger utility payment event
     }
 
-    // 租客支付保證金
+    // Tenant pays the deposit
     function payDeposit() public payable onlyTenant {
-        require(msg.value == depositAmount, "Incorrect deposit amount"); // 檢查支付金額是否正確
-        require(!depositPaid, "Deposit already paid"); // 檢查保證金是否已支付
-        depositPaid = true; // 設置保證金已支付標記
-        emit DepositPaid(msg.sender, msg.value); // 觸發保證金支付事件
+        require(msg.value == depositAmount, "Incorrect deposit amount"); // Check if the payment amount is correct
+        require(!depositPaid, "Deposit already paid"); // Check if the deposit has already been paid
+        depositPaid = true; // Set the deposit paid flag
+        emit DepositPaid(msg.sender, msg.value); // Trigger deposit payment event
     }
 
-    // 房東設置每月的水電費金額
+    // Landlord sets the monthly utility fee amount
     function setUtilityAmount(uint256 _utilityAmountInETH) public onlyLandlord {
-        utilityAmount = _utilityAmountInETH * 1 ether; // 更新水電費金額（ETH轉換為Wei）
+        utilityAmount = _utilityAmountInETH * 1 ether; // Update the utility fee amount (convert ETH to Wei)
     }
 
-    // 租客提交維修請求
+    // Tenant submits a maintenance request
     function requestMaintenance(string memory request) public onlyTenant {
-        emit MaintenanceRequested(msg.sender, request); // 觸發維修請求事件
+        emit MaintenanceRequested(msg.sender, request); // Trigger maintenance request event
     }
 
-    // 房東終止租約
+    // Landlord terminates the lease
     function terminateContract() public {
         require(msg.sender == landlord, "Only landlord can terminate contract");
         require(!contractTerminated, "Contract already terminated");
@@ -106,7 +106,7 @@ contract RentAgreement {
     function checkAndTerminateContract() public {
         require(!contractTerminated, "Contract already terminated");
 
-        // 檢查是否已經到達合約的終止日期
+        // Check if the contract end date has been reached
         if (block.timestamp >= leaseEndDate) {
             if (depositPaid) {
                 payable(tenant).transfer(depositAmount);
@@ -117,26 +117,26 @@ contract RentAgreement {
         }
     }
 
-    // 查看總應付金額（房租 + 水電費）
+    // View the total amount due (rent + utility fee)
     function getTotalDue() public view returns (uint256) {
-        return (rentAmount + utilityAmount) / 1 ether; // 返回總應付金額
+        return (rentAmount + utilityAmount) / 1 ether; // Return the total amount due
     }
 
-    // 提取合約中的餘額（不包括保證金）
+    // Withdraw the balance in the contract (excluding the deposit)
     function withdrawBalance() public onlyLandlord {
-        uint256 balanceToWithdraw = address(this).balance - depositAmount; // 計算可提取的金額（扣除保證金）
-        require(balanceToWithdraw > 0, "No balance to withdraw"); // 檢查可提取的金額是否大於 0
-        payable(landlord).transfer(balanceToWithdraw); // 將金額轉移到房東地址
-        emit Withdrawal(landlord, balanceToWithdraw); // 觸發提款事件
+        uint256 balanceToWithdraw = address(this).balance - depositAmount; // Calculate the amount that can be withdrawn (excluding the deposit)
+        require(balanceToWithdraw > 0, "No balance to withdraw"); // Check if there is a balance to withdraw
+        payable(landlord).transfer(balanceToWithdraw); // Transfer the amount to the landlord's address
+        emit Withdrawal(landlord, balanceToWithdraw); // Trigger withdrawal event
     }
 
-    // 查看合約餘額
+    // View the contract balance
     function getBalance() public view returns (uint256) {
-        return address(this).balance / 1 ether; // 返回合約餘額
+        return address(this).balance / 1 ether; // Return the contract balance
     }
 
     function getRentDueDate() public view returns (uint16 year, uint8 month, uint8 day, uint8 hour, uint8 minute, uint8 second) {
-        // 計算年、月、日、时、分、秒
+        // Calculate year, month, day, hour, minute, second
         year = uint16((rentDueDate / (60 * 60 * 24 * 365)) + 1970);
         uint256 secondsLeft = rentDueDate % (60 * 60 * 24 * 365);
         month = uint8((secondsLeft / (60 * 60 * 24 * 30)) % 12 + 1);
@@ -150,7 +150,7 @@ contract RentAgreement {
     }
     
     function getLeaseEndDate() public view returns (uint16 year, uint8 month, uint8 day, uint8 hour, uint8 minute, uint8 second){
-        // 計算年、月、日、时、分、秒
+        // Calculate year, month, day, hour, minute, second
         year = uint16((leaseEndDate / (60 * 60 * 24 * 365)) + 1970);
         uint256 secondsLeft = leaseEndDate % (60 * 60 * 24 * 365);
         month = uint8((secondsLeft / (60 * 60 * 24 * 30)) % 12 + 1);
